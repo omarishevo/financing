@@ -1,40 +1,14 @@
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
 import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
 
-# Cache the function to optimize performance
-@st.cache_data
-def load_and_process_data(uploaded_file):
-    # Load CSV file
+# Load data function (no machine learning involved)
+def load_data(uploaded_file):
     df = pd.read_csv(uploaded_file)
+    return df
 
-    # Basic Cleaning
-    df = df.drop_duplicates()
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-    df = df.dropna(subset=['Date'])
-
-    # Ensure 'Stock Index' exists and convert to category
-    if 'Stock Index' in df.columns:
-        df['Stock Index'] = df['Stock Index'].astype('category')
-
-    # Feature engineering
-    if all(col in df.columns for col in ['Daily High', 'Daily Low', 'Close Price', 'Open Price']):
-        df['Price Range'] = df['Daily High'] - df['Daily Low']
-        df['Price Change'] = df['Close Price'] - df['Open Price']
-    else:
-        st.warning("Some expected columns are missing for price range calculation.")
-
-    # Normalize numerical columns (excluding 'Trading Volume' if it exists)
-    numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns.difference(['Trading Volume'])
-    scaler = StandardScaler()
-    df_scaled = df.copy()
-    df_scaled[numeric_cols] = scaler.fit_transform(df[numeric_cols])
-
-    return df, df_scaled
-
-# ------------------ Streamlit Layout ------------------
-
-st.title("📈 Finance & Economics Dashboard")
+# Streamlit Layout
+st.title("📊 Data Visualization Dashboard")
 st.sidebar.header("Upload Your Dataset")
 
 # File uploader
@@ -42,16 +16,18 @@ uploaded_file = st.sidebar.file_uploader("📂 Upload a CSV file", type="csv")
 
 if uploaded_file is not None:
     try:
-        df, df_scaled = load_and_process_data(uploaded_file)
-        st.success("✅ Dataset uploaded and processed!")
+        df = load_data(uploaded_file)
+        st.success("✅ Dataset uploaded!")
 
         # Show raw data
         st.subheader("🗃 Raw Data")
         st.dataframe(df.head())
 
-        # Show processed data
-        st.subheader("📉 Normalized Data")
-        st.dataframe(df_scaled.head())
+        # Basic data visualization
+        st.subheader("📈 Basic Data Plot")
+        df.plot(x='Date', y='Close Price', kind='line', title='Close Price over Time')
+        st.pyplot(plt)
+
     except Exception as e:
         st.error(f"❌ Error loading the file: {e}")
 else:
