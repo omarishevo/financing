@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # Load data function (no machine learning involved)
 def load_data(uploaded_file):
@@ -25,8 +24,12 @@ if uploaded_file is not None:
 
         # Basic data visualization
         st.subheader("📈 Basic Data Plot")
-        df.plot(x='Date', y='Close Price', kind='line', title='Close Price over Time')
-        st.pyplot(plt)
+        
+        # Ensure 'Date' is a datetime column
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+
+        # Plot using Streamlit's built-in line chart
+        st.line_chart(df.set_index('Date')['Close Price'])
 
     except Exception as e:
         st.error(f"❌ Error loading the file: {e}")
